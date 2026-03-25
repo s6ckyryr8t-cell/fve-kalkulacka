@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FVE Kalkulačka — PVGIS</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
+header{background:#1F4E79;color:#fff;padding:16px 28px;display:flex;align-items:center;gap:12px}
+header h1{font-size:18px;font-weight:600}
+header span{font-size:12px;opacity:0.7;margin-left:auto}
+.app{display:grid;grid-template-columns:380px 1fr;min-height:calc(100vh - 56px)}
+.sidebar{background:#fff;border-right:1px solid #dde3ed;padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.main{padding:24px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6b7491;border-bottom:1px solid #eef0f5;padding-bottom:6px;margin-bottom:10px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field label{font-size:12px;font-weight:600;color:#4a5568}
+.field input,.field select{padding:8px 10px;border:1px solid #dde3ed;border-radius:8px;font-size:13px;color:#1a1a2e;background:#fff;width:100%}
+.field input:focus,.field select:focus{outline:none;border-color:#2E75B6}
+.hint{font-size:11px;color:#9aa5b4;margin-top:3px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px}
+.stab{padding:5px 11px;border-radius:6px;border:1px solid #dde3ed;background:#fff;color:#6b7491;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s}
+.stab.active{background:#EBF3FB;border-color:#2E75B6;color:#1F4E79}
+.stab.ok{border-color:#3B6D11;color:#3B6D11}
+.stab.active.ok{background:#EAF3DE;border-color:#3B6D11;color:#27500A}
+.spanel{display:none}
+.spanel.active{display:block}
+.btn-run{width:100%;padding:12px;background:#2E75B6;border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.15s;margin-top:4px}
+.btn-run:hover{background:#1F4E79}
+.btn-run:disabled{background:#b0bec5;cursor:not-allowed}
+.status{padding:12px 14px;border-radius:8px;font-size:13px;border:1px solid #dde3ed;background:#f8f9fc;color:#6b7491}
+.status.ok{background:#EAF3DE;border-color:#3B6D11;color:#27500A}
+.status.err{background:#FCEBEB;border-color:#A32D2D;color:#791F1F}
+.status.run{background:#EBF3FB;border-color:#2E75B6;color:#1F4E79}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.kpi{background:#fff;border:1px solid #dde3ed;border-radius:10px;padding:12px 14px}
+.kpi .l{font-size:11px;color:#6b7491;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:0.3px}
+.kpi .v{font-size:22px;font-weight:700;color:#1F4E79}
+.kpi .u{font-size:11px;color:#9aa5b4;margin-top:2px}
+.card{background:#fff;border:1px solid #dde3ed;border-radius:10px;overflow:hidden}
+.card-hdr{padding:12px 16px;border-bottom:1px solid #dde3ed;display:flex;align-items:center;justify-content:space-between}
+.card-hdr h2{font-size:13px;font-weight:700;color:#1a1a2e}
+.badge{background:#2E75B6;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:9px 11px;text-align:right;font-weight:600;font-size:11px;color:#6b7491;background:#f8f9fc;border-bottom:1px solid #dde3ed;white-space:nowrap}
+th:first-child{text-align:left}
+td{padding:8px 11px;text-align:right;border-bottom:1px solid #f0f2f5;color:#1a1a2e}
+td:first-child{text-align:left;color:#4a5568;font-weight:600}
+tr:last-child td{background:#f8f9fc;font-weight:700;border-bottom:none}
+.exrow{display:flex;gap:8px}
+.bex{flex:1;padding:9px;border-radius:8px;border:1px solid #dde3ed;background:#fff;color:#4a5568;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s}
+.bex:hover:not(:disabled){border-color:#2E75B6;color:#2E75B6}
+.bex:disabled{opacity:0.4;cursor:not-allowed}
+</style>
+</head>
+<body>
+<header>
+  <div style="width:32px;height:32px;background:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">☀</div>
+  <h1>FVE Kalkulačka — PVGIS</h1>
+  <span>EU JRC · v5_2 · data do 2020</span>
+</header>
+<div class="app">
+  <div class="sidebar">
+    <div>
+      <div class="sec">Zákazník a lokalita</div>
+      <div class="field"><label>Zákazník</label><input id="zak" type="text" placeholder="Jan Novák"/></div>
+      <div class="row2">
+        <div class="field"><label>Lat (šířka)</label><input id="lat" type="number" value="50.0755" step="0.0001"/><div class="hint">Praha = 50.0755</div></div>
+        <div class="field"><label>Lon (délka)</label><input id="lon" type="number" value="14.4378" step="0.0001"/><div class="hint">Praha = 14.4378</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec">Společné parametry</div>
+      <div class="field"><label>Typ panelů</label>
+        <select id="pvtech">
+          <option value="crystSi">Krystalický křemík (standard)</option>
+          <option value="CIS">Tenkovrstvé CIS</option>
+          <option value="CdTe">Tenkovrstvé CdTe</option>
+        </select>
+      </div>
+      <div class="field"><label>Způsob montáže</label>
+        <select id="mount">
+          <option value="building">Na budově — střecha / fasáda</option>
+          <option value="free">Volně stojící — lepší chlazení</option>
+        </select>
+      </div>
+      <div class="field"><label>Průměr za roky</label>
+        <select id="years">
+          <option value="2016:2020">2016–2020 (5 let)</option>
+          <option value="2011:2020" selected>2011–2020 (10 let) — doporučeno</option>
+          <option value="2005:2020">2005–2020 (15 let)</option>
+        </select>
+      </div>
+    </div>
+    <div>
+      <div class="sec">Parametry stringů</div>
+      <div class="stabs" id="tabs"></div>
+      <div id="panels"></div>
+    </div>
+    <button class="btn-run" id="btnRun" onclick="run()">▶ Načíst výrobu z PVGIS</button>
+  </div>
+  <div class="main">
+    <div class="status" id="st">Vyplň parametry vlevo a klikni na tlačítko.</div>
+    <div id="kpis" class="kpis" style="display:none"></div>
+    <div class="exrow">
+      <button class="bex" id="eM" onclick="expM()" disabled>↓ Měsíce (CSV)</button>
+      <button class="bex" id="eH" onclick="expH()" disabled>↓ Hodiny — 8 760 řádků (CSV)</button>
+      <button class="bex" id="eQ" onclick="expQ()" disabled>↓ Čtvrthodiny — 35 040 řádků (CSV)</button>
+    </div>
+    <div class="card" id="card" style="display:none">
+      <div class="card-hdr"><h2>Měsíční výroba (kWh) — průměrný rok</h2><div class="badge" id="badge">—</div></div>
+      <div class="tw"><table id="tbl"></table></div>
+    </div>
+  </div>
+</div>
+<script>
+const MES=['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+const ANG=[{v:0,l:'0° — naplocho'},{v:10,l:'10° — velmi mírný'},{v:15,l:'15° — mírný'},{v:20,l:'20° — střední'},{v:25,l:'25° — střední'},{v:30,l:'30° — standardní'},{v:35,l:'35° — standardní'},{v:40,l:'40° — strmá'},{v:45,l:'45° — velmi strmá'},{v:90,l:'90° — fasáda'}];
+const ASP=[{v:-180,l:'-180° — Sever'},{v:-135,l:'-135° — SZ'},{v:-90,l:'-90° — Východ'},{v:-45,l:'-45° — JV'},{v:0,l:'0° — Jih (optimum)'},{v:45,l:'45° — JZ'},{v:90,l:'90° — Západ'},{v:135,l:'135° — SZ'},{v:180,l:'180° — Sever'}];
+const LOS=[{v:10,l:'Prémiový (~10%)'},{v:12,l:'Kvalitní (~12%)'},{v:14,l:'Standardní (~14%)'},{v:18,l:'Ekonomický (~18%)'},{v:22,l:'Základní (~22%)'}];
+function sel(o,d){return o.map(x=>`<option value="${x.v}"${x.v==d?' selected':''}>${x.l}</option>`).join('')}
+const tabsEl=document.getElementById('tabs'),panelsEl=document.getElementById('panels');
+for(let s=1;s<=8;s++){
+  const t=document.createElement('div');
+  t.className='stab'+(s===1?' active':'');t.textContent='S'+s;t.dataset.s=s;
+  t.onclick=()=>sw(s);tabsEl.appendChild(t);
+  const p=document.createElement('div');
+  p.className='spanel'+(s===1?' active':'');p.id='sp'+s;
+  p.innerHTML=`<div class="row2" style="margin-top:8px">
+    <div class="field"><label>Výkon (kWp)</label><input id="k${s}" type="number" value="${s<=2?5:''}" step="0.1" min="0" placeholder="0 = neaktivní" oninput="upd(${s})"/></div>
+    <div class="field"><label>Ztráty</label><select id="l${s}">${sel(LOS,14)}</select></div>
+  </div>
+  <div class="row2" style="margin-top:8px">
+    <div class="field"><label>Sklon</label><select id="a${s}">${sel(ANG,30)}</select></div>
+    <div class="field"><label>Azimut</label><select id="asp${s}">${sel(ASP,0)}</select></div>
+  </div>`;
+  panelsEl.appendChild(p);
+}
+function sw(s){
+  document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.spanel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('[data-s="'+s+'"]').classList.add('active');
+  document.getElementById('sp'+s).classList.add('active');
+}
+function upd(s){
+  const v=parseFloat(document.getElementById('k'+s).value)||0;
+  const t=document.querySelector('[data-s="'+s+'"]');
+  v>0?t.classList.add('ok'):t.classList.remove('ok');
+}
+function setSt(m,tp=''){const e=document.getElementById('st');e.className='status'+(tp?' '+tp:'');e.textContent=m;}
+let hData=[],mData={},aStr=[];
+async function run(){
+  const lat=parseFloat(document.getElementById('lat').value);
+  const lon=parseFloat(document.getElementById('lon').value);
+  if(!lat||!lon){setSt('Zadej zeměpisnou šířku a délku.','err');return;}
+  aStr=[];
+  for(let s=1;s<=8;s++){
+    const k=parseFloat(document.getElementById('k'+s).value)||0;
+    if(k>0)aStr.push({idx:s,kwp:k,angle:+document.getElementById('a'+s).value,aspect:+document.getElementById('asp'+s).value,loss:+document.getElementById('l'+s).value});
+  }
+  if(!aStr.length){setSt('Zadej výkon alespoň jednoho stringu (kWp > 0).','err');return;}
+  document.getElementById('btnRun').disabled=true;
+  hData=[];mData={};
+  const hMap={};
+  const pvt=document.getElementById('pvtech').value;
+  const mnt=document.getElementById('mount').value;
+  const [sy,ey]=document.getElementById('years').value.split(':');
+  for(let i=0;i<aStr.length;i++){
+    const st=aStr[i];
+    setSt(`Načítám String ${st.idx} (${i+1}/${aStr.length}) — může trvat 10–20 sekund...`,'run');
+    const url=`https://re.jrc.ec.europa.eu/api/v5_2/seriescalc?lat=${lat}&lon=${lon}&peakpower=${st.kwp}&loss=${st.loss}&angle=${st.angle}&aspect=${st.aspect}&pvtechchoice=${pvt}&mountingplace=${mnt}&startyear=${sy}&endyear=${ey}&outputformat=json&pvcalculation=1`;
+    try{
+      const r=await fetch(url);
+      if(!r.ok){let msg='';try{const e=await r.json();msg=e.message||r.status;}catch{msg=r.status;}setSt('Chyba PVGIS: '+msg,'err');document.getElementById('btnRun').disabled=false;return;}
+      const d=await r.json();
+      if(!d.outputs||!d.outputs.hourly){setSt('PVGIS nevrátilo hodinová data.','err');document.getElementById('btnRun').disabled=false;return;}
+      mData[st.idx]=new Array(12).fill(0);
+      d.outputs.hourly.forEach(h=>{
+        const t=h.time,mo=parseInt(t.substring(4,6))-1,kwh=(h.P||0)/1000;
+        mData[st.idx][mo]+=kwh;
+        if(!hMap[t])hMap[t]={time:t};
+        hMap[t]['s'+st.idx]=kwh;
+      });
+    }catch(e){setSt('Chyba připojení: '+e.message+' — zkus otevřít soubor přes Safari s vypnutou bezpečnostní politikou.','err');document.getElementById('btnRun').disabled=false;return;}
+  }
+  const yrs=parseInt(ey)-parseInt(sy)+1;
+  Object.keys(mData).forEach(k=>{mData[k]=mData[k].map(v=>v/yrs);});
+  const avgMap={};
+  Object.values(hMap).forEach(r=>{
+    const key=r.time.substring(4);
+    if(!avgMap[key])avgMap[key]={time:key};
+    aStr.forEach(st=>{avgMap[key]['s'+st.idx]=(avgMap[key]['s'+st.idx]||0)+(r['s'+st.idx]||0);});
+  });
+  Object.values(avgMap).forEach(r=>{
+    aStr.forEach(st=>{r['s'+st.idx]=(r['s'+st.idx]||0)/yrs;});
+    r.total=aStr.reduce((s,st)=>s+(r['s'+st.idx]||0),0);
+  });
+  hData=Object.values(avgMap).sort((a,b)=>a.time.localeCompare(b.time));
+  document.getElementById('btnRun').disabled=false;
+  render();
+}
+function fmt(v){return Math.round(v).toLocaleString('cs');}
+function fd(v,d=3){return v.toFixed(d).replace('.',',');}
+function render(){
+  const tot=aStr.reduce((s,st)=>(mData[st.idx]||[]).reduce((a,b)=>a+b,s),0);
+  const kwp=aStr.reduce((s,st)=>s+st.kwp,0);
+  const ma=new Array(12).fill(0);
+  aStr.forEach(st=>(mData[st.idx]||[]).forEach((v,i)=>ma[i]+=v));
+  const peak=MES[ma.indexOf(Math.max(...ma))];
+  document.getElementById('kpis').style.display='grid';
+  document.getElementById('kpis').innerHTML=`
+    <div class="kpi"><div class="l">Roční výroba</div><div class="v">${fmt(tot)}</div><div class="u">kWh / rok</div></div>
+    <div class="kpi"><div class="l">Celkový výkon</div><div class="v">${kwp.toFixed(2)}</div><div class="u">kWp</div></div>
+    <div class="kpi"><div class="l">Spec. výroba</div><div class="v">${fmt(kwp>0?tot/kwp:0)}</div><div class="u">kWh/kWp/rok</div></div>
+    <div class="kpi"><div class="l">Aktivní stringy</div><div class="v">${aStr.length}</div><div class="u">z 8</div></div>
+    <div class="kpi"><div class="l">Nejlepší měsíc</div><div class="v" style="font-size:16px">${peak}</div><div class="u"> </div></div>
+    <div class="kpi"><div class="l">Řádků dat</div><div class="v">${hData.length.toLocaleString('cs')}</div><div class="u">hodin</div></div>`;
+  const th='<tr><th>Měsíc</th>'+aStr.map(s=>`<th>String ${s.idx} (${s.kwp} kWp)</th>`).join('')+'<th>Celkem</th></tr>';
+  let rows='',cT=new Array(aStr.length).fill(0),gT=0;
+  MES.forEach((m,mi)=>{
+    let rt=0;
+    const cells=aStr.map((st,si)=>{const v=(mData[st.idx]||[])[mi]||0;cT[si]+=v;rt+=v;return`<td>${fmt(v)}</td>`;}).join('');
+    gT+=rt;rows+=`<tr><td>${m}</td>${cells}<td style="color:#27500A">${fmt(rt)}</td></tr>`;
+  });
+  rows+=`<tr><td>Celkem rok</td>${cT.map(v=>`<td>${fmt(v)}</td>`).join('')}<td style="color:#27500A">${fmt(gT)}</td></tr>`;
+  document.getElementById('tbl').innerHTML='<thead>'+th+'</thead><tbody>'+rows+'</tbody>';
+  document.getElementById('badge').textContent=fmt(gT)+' kWh/rok';
+  document.getElementById('card').style.display='block';
+  ['eM','eH','eQ'].forEach(id=>document.getElementById(id).disabled=false);
+  setSt(`Hotovo — ${aStr.length} string${aStr.length>1?'ů':''}, průměr za ${parseInt(document.getElementById('years').value.split(':')[1])-parseInt(document.getElementById('years').value.split(':')[0])+1} let.`,'ok');
+}
+function dl(c,n){const b=new Blob(['\uFEFF'+c],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();}
+function slug(){return(document.getElementById('zak').value||'FVE').replace(/\s+/g,'_');}
+function expM(){
+  const h=['Měsíc',...aStr.map(s=>`String ${s.idx} (kWh)`),'Celkem (kWh)'].join(';');
+  const rows=MES.map((m,mi)=>{const v=aStr.map(st=>fd((mData[st.idx]||[])[mi]||0));const t=aStr.reduce((s,st)=>s+((mData[st.idx]||[])[mi]||0),0);return[m,...v,fd(t)].join(';');});
+  dl([h,...rows].join('\n'),slug()+'_mesice.csv');
+}
+function expH(){
+  const h=['Datum','Hodina','Čas',...aStr.map(s=>`String ${s.idx} (kWh)`),'Celkem (kWh)'].join(';');
+  const rows=hData.map(r=>{const t=r.time,mo=t.substring(0,2),dy=t.substring(2,4),hr=t.substring(5,7);const v=aStr.map(s=>fd(r['s'+s.idx]||0,4));return[`${dy}.${mo}.2024`,hr,`${hr}:00`,...v,fd(r.total||0,4)].join(';');});
+  dl([h,...rows].join('\n'),slug()+'_hodiny.csv');
+}
+function expQ(){
+  const h=['Datum','Čtvrthodina','Čas',...aStr.map(s=>`String ${s.idx} (kWh)`),'Celkem (kWh)'].join(';');
+  const rows=[];let qi=1;
+  hData.forEach(r=>{const t=r.time,mo=t.substring(0,2),dy=t.substring(2,4),hr=parseInt(t.substring(5,7));for(let q=0;q<4;q++){const cas=String(hr).padStart(2,'0')+':'+String(q*15).padStart(2,'0');const v=aStr.map(s=>fd((r['s'+s.idx]||0)/4,5));rows.push([`${dy}.${mo}.2024`,qi,cas,...v,fd((r.total||0)/4,5)].join(';'));qi++;}});
+  dl([h,...rows].join('\n'),slug()+'_ctvrthodiny.csv');
+}
+for(let s=1;s<=8;s++)upd(s);
+</script>
+</body>
+</html>
